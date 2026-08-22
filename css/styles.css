@@ -1,0 +1,76 @@
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#toolbar {
+    height: 50px;
+    background-color: lightblue;
+}
+
+#formula-bar {
+    height: 40px;
+    background-color: lightgreen;
+}
+
+#spreadsheet {
+    flex: 1;
+    background-color: lightyellow;
+}
+
+#status-bar {
+    height: 25px;
+    background-color: lightcoral;
+}
+
+#spreadsheet {
+    flex: 1;
+    overflow: auto;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+th,
+td {
+    border: 1px solid #ccc;
+    width: 100px;
+    height: 25px;
+}
+
+th {
+    background-color: #f3f3f3;
+    font-weight: normal;
+    text-align: center;
+}
+
+.selected-cell {
+    outline: 2px solid blue;
+}
+
+#formula-bar {
+    height: 40px;
+    display: flex;
+    align-items: center;
+
+    border-bottom: 1px solid #ccc;
+}
+
+#name-box {
+    width: 80px;
+    height: 30px;
+
+    border: 1px solid #ccc;
+
+    padding: 5px;
+}
