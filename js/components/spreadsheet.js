@@ -4,6 +4,7 @@ export function renderSpreadsheet(grid) {
 
     let selectedCell = null;
     let isEditing = false;
+    let editor = null;
     let originalValue = "";
 
     const rows = grid.rows;
@@ -49,7 +50,6 @@ export function renderSpreadsheet(grid) {
 
         if (selectedCell !== null) {
             selectedCell.classList.remove('selected-cell');
-            selectedCell.contentEditable = false;
         }
 
         selectedCell = cell;
@@ -64,20 +64,65 @@ export function renderSpreadsheet(grid) {
         );
     }
 
-    table.addEventListener("input", function (event) {
-        const cell = event.target;
-
-        if (!cell.classList.contains("spreadsheet-cell")) {
+    function startEditing(initialValue) {
+        if (selectedCell === null || isEditing) {
             return;
         }
 
-        const row = Number(cell.dataset.row);
-        const column = Number(cell.dataset.column);
+        isEditing = true;
+
+        const row = Number(selectedCell.dataset.row);
+        const column = Number(selectedCell.dataset.column);
 
         const cellData = grid.getCell(row, column);
 
-        cellData.value = cell.textContent;
-    });
+        originalValue = cellData.value;
+
+        editor = document.createElement('input');
+        editor.type = 'text';
+        editor.value = initialValue;
+
+        selectedCell.textContent = '';
+        selectedCell.appendChild(editor);
+        editor.focus();
+
+        editor.setSelectionRange(editor.value.length, editor.value.length);
+
+    }
+
+    function finishEditing() {
+        if (!isEditing || selectedCell === null) {
+            return;
+        }
+
+        const row = Number(selectedCell.dataset.row);
+        const column = Number(selectedCell.dataset.column);
+
+        const cellData = grid.getCell(row, column);
+
+        cellData.value = editor.value;
+        selectedCell.textContent = cellData.value;
+
+        isEditing = false;
+        editor = null;
+    }
+
+    function cancelEditing() {
+        if (!isEditing || selectedCell === null) {
+            return;
+        }
+
+        const row = Number(selectedCell.dataset.row);
+        const column = Number(selectedCell.dataset.column);
+
+        const cellData = grid.getCell(row, column);
+
+        cellData.value = originalValue;
+        selectedCell.textContent = originalValue;
+
+        editor = null;
+        isEditing = false;
+    }
 
     table.addEventListener('click', function (event) {
 
@@ -87,7 +132,28 @@ export function renderSpreadsheet(grid) {
             return;
         }
 
+        if (isEditing && cell !== selectedCell) {
+            finishEditing();
+        }
+
         selectCell(cell);
+    });
+
+    table.addEventListener('dblclick', function (event) {
+        const cell = event.target;
+
+        if (!cell.classList.contains('spreadsheet-cell')) {
+            return;
+        }
+
+        selectCell(cell);
+
+        const row = Number(selectedCell.dataset.row);
+        const column = Number(selectedCell.dataset.column);
+
+        const cellData = grid.getCell(row, column);
+
+        startEditing(cellData.value);
     });
 
     document.addEventListener('keydown', function (event) {
@@ -100,21 +166,8 @@ export function renderSpreadsheet(grid) {
 
             event.preventDefault();
 
-            isEditing = true;
-            originalValue = selectedCell.textContent;
-            selectedCell.contentEditable = true;
-            selectedCell.textContent = event.key;
-            selectedCell.focus();
+            startEditing(event.key);
 
-            const range = document.createRange();
-            const selection = window.getSelection();
-
-            range.selectNodeContents(selectedCell);
-            range.collapse(false);
-
-            selection.removeAllRanges();
-            selection.addRange(range);
-            
             return;
         }
 
@@ -126,22 +179,7 @@ export function renderSpreadsheet(grid) {
 
             event.preventDefault();
 
-            selectedCell.textContent = originalValue;
-
-            const row =
-                Number(selectedCell.dataset.row);
-
-            const column =
-                Number(selectedCell.dataset.column);
-
-            const cellData =
-                grid.getCell(row, column);
-
-            cellData.value = originalValue;
-
-            selectedCell.contentEditable = false;
-
-            isEditing = false;
+            cancelEditing();
 
             return;
         }
@@ -150,18 +188,10 @@ export function renderSpreadsheet(grid) {
 
             event.preventDefault();
 
-
-            // Finish editing
-
             if (isEditing) {
 
-                isEditing = false;
-
-                selectedCell.contentEditable = false;
+                finishEditing();
             }
-
-
-            // Move down
 
             const row =
                 Number(selectedCell.dataset.row);
