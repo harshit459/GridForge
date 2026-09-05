@@ -108,4 +108,17 @@ export class SpreadsheetView {
 
         cell.textContent = cellData.value;
     }
+
+    createEditor(cell, value) {
+
+        const editor = document.createElement("input");
+
+        editor.type = "text";
+        editor.value = value;
+
+        cell.textContent = "";
+        cell.appendChild(editor);
+
+        return editor;
+    }
 }

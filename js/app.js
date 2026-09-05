@@ -2,7 +2,7 @@ import { Grid } from './models/grid.js';
 import { SpreadsheetView } from './views/spreadsheetView.js';
 import { SpreadsheetController } from './controllers/spreadsheetController.js';
 
-const grid = new Grid(3, 4);
+const grid = new Grid(50, 15);
 
 const table = document.getElementById('spreadsheet-table');
 
