@@ -1,8 +1,9 @@
 export class SpreadsheetView {
 
-    constructor(grid, table) {
+    constructor(grid, table, formulaInput) {
         this.grid = grid;
         this.table = table;
+        this.formulaInput = formulaInput;
     }
 
     render() {
@@ -120,5 +121,18 @@ export class SpreadsheetView {
         cell.appendChild(editor);
 
         return editor;
+    }
+
+    setFormulaInput(value) {
+        this.formulaInput.value = value;
+    }
+
+    focusFormulaInput() {
+        this.formulaInput.focus();
+
+        this.formulaInput.setSelectionRange(
+            this.formulaInput.value.length,
+            this.formulaInput.value.length
+        );
     }
 }

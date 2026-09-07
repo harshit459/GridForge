@@ -1,14 +1,17 @@
 export class SpreadsheetController {
 
-    constructor(grid, view) {
+    constructor(grid, view, dependencyGraph, recalculationService) {
         this.grid = grid;
         this.view = view;
+        this.dependencyGraph = dependencyGraph;
+        this.recalculationService = recalculationService;
 
         this.selectedCell = null;
 
         this.isEditing = false;
         this.editor = null;
         this.originalValue = "";
+        this.editingSource = null;
 
         this.setupEvents();
     }
@@ -46,7 +49,7 @@ export class SpreadsheetController {
 
             const cellData = this.grid.getCell(row, column);
 
-            this.startEditing(cellData.value);
+            this.startEditing(cellData.value, "cell");
         });
 
         document.addEventListener('keydown', (event) => {
@@ -54,12 +57,6 @@ export class SpreadsheetController {
             if (this.selectedCell === null) {
                 return;
             }
-
-            const row = Number(this.selectedCell.dataset.row);
-            const column = Number(this.selectedCell.dataset.column);
-
-            let nextRow = row;
-            let nextColumn = column;
 
             if (event.key === "Enter") {
 
@@ -107,7 +104,7 @@ export class SpreadsheetController {
             if (event.key.length === 1 && !this.isEditing) {
 
                 event.preventDefault();
-                this.startEditing(event.key);
+                this.startEditing(event.key, "cell");
 
                 return;
             }
@@ -115,6 +112,12 @@ export class SpreadsheetController {
             if (this.isEditing) {
                 return;
             }
+
+            const row = Number(this.selectedCell.dataset.row);
+            const column = Number(this.selectedCell.dataset.column);
+
+            let nextRow = row;
+            let nextColumn = column;
 
             if (event.key === 'ArrowRight') {
                 nextColumn++;
@@ -153,6 +156,14 @@ export class SpreadsheetController {
 
             this.selectCell(nextCellElement);
         });
+
+        this.view.formulaInput.addEventListener('focus', () => {
+
+            if (this.selectedCell === null || this.isEditing) {
+                return;
+            }
+            this.startEditing(this.view.formulaInput.value, "formula");
+        });
     }
 
     selectCell(cell) {
@@ -160,13 +171,23 @@ export class SpreadsheetController {
         this.selectedCell = cell;
 
         this.view.selectCell(cell);
+
+        const row = Number(cell.dataset.row);
+        const column = Number(cell.dataset.column);
+
+        const cellData = this.grid.getCell(row, column);
+
+        this.view.setFormulaInput(cellData.value);
     }
 
-    startEditing(intialvalue) {
+    startEditing(initialValue, source) {
 
         if (this.selectedCell === null || this.isEditing) {
             return;
         }
+
+        this.isEditing = true;
+        this.editingSource = source;
 
         const row = Number(this.selectedCell.dataset.row);
         const column = Number(this.selectedCell.dataset.column);
@@ -175,19 +196,26 @@ export class SpreadsheetController {
 
         this.originalValue = cellData.value;
 
-        this.editor = this.view.createEditor(
-            this.selectedCell,
-            intialvalue
-        );
+        if (source === "cell") {
 
-        this.isEditing = true;
+            this.editor =
+                this.view.createEditor(
+                    this.selectedCell,
+                    initialValue
+                );
 
-        this.editor.focus();
+            this.editor.focus();
 
-        this.editor.setSelectionRange(
-            this.editor.value.length,
-            this.editor.value.length
-        );
+            this.editor.setSelectionRange(
+                this.editor.value.length,
+                this.editor.value.length
+            );
+        }
+
+        if (source === "formula") {
+
+            this.view.focusFormulaInput();
+        }
     }
 
     finishEditing() {
@@ -201,12 +229,45 @@ export class SpreadsheetController {
 
         const cellData = this.grid.getCell(row, column);
 
-        cellData.value = this.editor.value;
+        let newValue;
+
+        if (this.editingSource === "cell") {
+            newValue = this.editor.value;
+        }
+
+        if (this.editingSource === "formula") {
+            newValue = this.view.formulaInput.value;
+        }
+
+        const address = this.selectedCell.dataset.address;
+
+        const affectedCells =
+            this.recalculationService.setCellContent(
+                address,
+                newValue
+            );
 
         this.view.updateCellDisplay(cellData);
 
+        for (const affectedAddress of affectedCells) {
+
+            const affectedCell =
+                this.recalculationService.getCell(
+                    affectedAddress
+                );
+
+            if (affectedCell === null) {
+                continue;
+            }
+
+            this.view.updateCellDisplay(affectedCell);
+        }
+
+        // this.view.setFormulaInput(newValue);
+
         this.editor = null;
         this.isEditing = false;
+        this.editingSource = null;
         this.originalValue = "";
     }
 
@@ -224,9 +285,11 @@ export class SpreadsheetController {
         cellData.value = this.originalValue;
 
         this.view.updateCellDisplay(cellData);
+        this.view.setFormulaInput(this.originalValue);
 
         this.editor = null;
         this.isEditing = false;
+        this.editingSource = null;
         this.originalValue = "";
     }
 } 
