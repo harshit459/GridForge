@@ -4,7 +4,7 @@ import { SpreadsheetController } from './controllers/spreadsheetController.js';
 import { DependencyGraph } from './services/dependencyGraph.js';
 import { RecalculationService } from './services/recalculationService.js';
 
-const grid = new Grid(50, 15);
+const grid = new Grid(50, 26);
 
 const table = document.getElementById('spreadsheet-table');
 const formulaInput = document.getElementById('formula-input');

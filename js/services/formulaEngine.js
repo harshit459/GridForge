@@ -1,3 +1,5 @@
+import { AddressUtils } from "../utils/addressUtils.js";
+
 export class FormulaEngine {
 
     evaluate(formula, grid) {
@@ -18,6 +20,31 @@ export class FormulaEngine {
     evaluateExpression(expression, grid) {
 
         expression = expression.trim();
+
+        const functionResult =
+            this.evaluateFunction(
+                expression,
+                grid
+            );
+
+        if (functionResult !== null) {
+            return functionResult;
+        }
+
+        if (expression.startsWith("-")) {
+
+            const value =
+                this.evaluateExpression(
+                    expression.substring(1).trim(),
+                    grid
+                );
+
+            if (typeof value === "string") {
+                return value;
+            }
+
+            return -value;
+        }
 
         if (
             expression.startsWith("(") &&
@@ -92,6 +119,55 @@ export class FormulaEngine {
         );
     }
 
+    evaluateFunction(expression, grid) {
+
+        if (
+            !expression.startsWith("SUM(") ||
+            !expression.endsWith(")")
+        ) {
+            return null;
+        }
+
+        const range =
+            expression.substring(
+                4,
+                expression.length - 1
+            );
+
+        const parts = range.split(":");
+
+        if (parts.length !== 2) {
+            return "#ERROR!";
+        }
+
+        const values =
+            this.getRangeValues(
+                parts[0],
+                parts[1],
+                grid
+            );
+
+        if (typeof values === "string") {
+            return values;
+        }
+
+        let sum = 0;
+
+        for (const value of values) {
+
+            const number =
+                Number(value);
+
+            if (Number.isNaN(number)) {
+                return "#VALUE!";
+            }
+
+            sum += number;
+        }
+
+        return sum;
+    }
+
     hasMatchingOuterParentheses(expression) {
 
         let depth = 0;
@@ -134,6 +210,19 @@ export class FormulaEngine {
                 depth === 0 &&
                 character === operator
             ) {
+
+                if (
+                    operator === "-" &&
+                    (
+                        i === 0 ||
+                        ["+", "-", "*", "/", "("].includes(
+                            expression[i - 1]
+                        )
+                    )
+                ) {
+                    continue;
+                }
+
                 return i;
             }
         }
@@ -216,14 +305,18 @@ export class FormulaEngine {
 
     getCellValue(address, grid) {
 
-        const column =
-            address.charCodeAt(0) - 65;
+        const position =
+            AddressUtils.parseAddress(address);
 
-        const row =
-            Number(address.substring(1)) - 1;
+        if (position === null) {
+            return "#REF!";
+        }
 
         const cellData =
-            grid.getCell(row, column);
+            grid.getCell(
+                position.row,
+                position.column
+            );
 
         if (cellData === null) {
             return "#REF!";
@@ -231,4 +324,33 @@ export class FormulaEngine {
 
         return cellData.value;
     }
+
+    getRangeValues(startAddress, endAddress, grid) {
+
+        const cells =
+            AddressUtils.getRangeCells(
+                startAddress,
+                endAddress
+            );
+
+        const values = [];
+
+        for (const cell of cells) {
+
+            const cellData =
+                grid.getCell(
+                    cell.row,
+                    cell.column
+                );
+
+            if (cellData === null) {
+                return "#REF!";
+            }
+
+            values.push(cellData.value);
+        }
+
+        return values;
+    }
+
 }

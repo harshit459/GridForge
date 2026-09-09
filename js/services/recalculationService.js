@@ -1,4 +1,5 @@
 import { FormulaEngine } from "./formulaEngine.js";
+import { AddressUtils } from "../utils/addressUtils.js";
 
 export class RecalculationService {
 
@@ -41,13 +42,17 @@ export class RecalculationService {
 
     getCell(address) {
 
-        const column =
-            address.charCodeAt(0) - 65;
+        const position =
+            AddressUtils.parseAddress(address);
 
-        const row =
-            Number(address.substring(1)) - 1;
+        if (position === null) {
+            return null;
+        }
 
-        return this.grid.getCell(row, column);
+        return this.grid.getCell(
+            position.row,
+            position.column
+        );
     }
 
     setCellContent(address, content) {

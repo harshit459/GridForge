@@ -1,3 +1,5 @@
+import { AddressUtils } from "../utils/addressUtils.js";
+
 export class SpreadsheetView {
 
     constructor(grid, table, formulaInput) {
@@ -45,7 +47,7 @@ export class SpreadsheetView {
             const header = document.createElement("th");
 
             header.textContent =
-                String.fromCharCode(65 + column);
+                AddressUtils.columnToName(column);
 
             headerRow.appendChild(header);
         }
@@ -65,7 +67,7 @@ export class SpreadsheetView {
         cell.dataset.column = cellData.column;
 
         const columnName =
-            String.fromCharCode(65 + column);
+            AddressUtils.columnToName(column);
 
         const rowName = row + 1;
 
