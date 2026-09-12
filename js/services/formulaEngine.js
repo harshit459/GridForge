@@ -120,7 +120,6 @@ export class FormulaEngine {
     }
 
     evaluateFunction(expression, grid) {
-
         if (
             !expression.startsWith("SUM(") ||
             !expression.endsWith(")")
@@ -128,44 +127,103 @@ export class FormulaEngine {
             return null;
         }
 
-        const range =
+        const argumentsExpression =
             expression.substring(
                 4,
                 expression.length - 1
             );
 
-        const parts = range.split(":");
-
-        if (parts.length !== 2) {
-            return "#ERROR!";
-        }
-
-        const values =
-            this.getRangeValues(
-                parts[0],
-                parts[1],
-                grid
-            );
-
-        if (typeof values === "string") {
-            return values;
-        }
+        const argumentsList =
+            this.splitArguments(argumentsExpression);
 
         let sum = 0;
 
-        for (const value of values) {
+        for (const argument of argumentsList) {
 
-            const number =
-                Number(value);
+            const parts = argument.split(":");
 
-            if (Number.isNaN(number)) {
-                return "#VALUE!";
+            if (
+                parts.length === 2 &&
+                AddressUtils.parseAddress(parts[0]) !== null &&
+                AddressUtils.parseAddress(parts[1]) !== null
+            ) {
+                const values =
+                    this.getRangeValues(
+                        parts[0],
+                        parts[1],
+                        grid
+                    );
+
+                if (typeof values === "string") {
+                    return values;
+                }
+
+                for (const value of values) {
+                    const number = Number(value);
+
+                    if (Number.isNaN(number)) {
+                        return "#VALUE!";
+                    }
+
+                    sum += number;
+                }
+            } else {
+                const value =
+                    this.evaluateExpression(
+                        argument,
+                        grid
+                    );
+
+                if (typeof value === "string") {
+                    return value;
+                }
+
+                sum += value;
             }
 
-            sum += number;
         }
 
         return sum;
+    }
+
+    splitArguments(expression) {
+
+        const argumentsList = [];
+        let currentArgument = "";
+        let depth = 0;
+
+        for (const character of expression) {
+
+            if (character === "(") {
+                depth++;
+            }
+
+            if (character === ")") {
+                depth--;
+            }
+
+            if (character === "," && depth === 0) {
+
+                argumentsList.push(
+                    currentArgument.trim()
+                );
+
+                currentArgument = "";
+
+                continue;
+            }
+
+            currentArgument += character;
+        }
+
+        if (currentArgument.trim() !== "") {
+
+            argumentsList.push(
+                currentArgument.trim()
+            );
+        }
+
+        return argumentsList;
     }
 
     hasMatchingOuterParentheses(expression) {
@@ -290,17 +348,49 @@ export class FormulaEngine {
     }
 
     getReferences(formula) {
-
         const expression = formula.substring(1);
 
-        const references =
-            expression.match(/[A-Z]+[0-9]+/g);
+        const references = new Set();
 
-        if (references === null) {
-            return [];
+        const rangePattern =
+            /([A-Z]+[0-9]+):([A-Z]+[0-9]+)/g;
+
+        let rangeMatch;
+
+        while ((rangeMatch = rangePattern.exec(expression)) !== null) {
+
+            const startAddress = rangeMatch[1];
+            const endAddress = rangeMatch[2];
+
+            const cells =
+                AddressUtils.getRangeCells(
+                    startAddress,
+                    endAddress
+                );
+
+            for (const cell of cells) {
+                references.add(
+                    AddressUtils.columnToName(cell.column) +
+                    (cell.row + 1)
+                );
+            }
         }
 
-        return references;
+        const expressionWithoutRanges =
+            expression.replace(rangePattern, "");
+
+        const singleReferences =
+            expressionWithoutRanges.match(
+                /[A-Z]+[0-9]+/g
+            );
+
+        if (singleReferences !== null) {
+            for (const reference of singleReferences) {
+                references.add(reference);
+            }
+        }
+
+        return [...references];
     }
 
     getCellValue(address, grid) {
