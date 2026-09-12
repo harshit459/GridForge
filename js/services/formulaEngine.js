@@ -120,70 +120,140 @@ export class FormulaEngine {
     }
 
     evaluateFunction(expression, grid) {
+
+        const functionMatch =
+            expression.match(/^([A-Z]+)\((.*)\)$/);
+
+        if (functionMatch === null) {
+            return null;
+        }
+
+        const functionName = functionMatch[1];
+        const argumentsExpression = functionMatch[2];
+
         if (
-            !expression.startsWith("SUM(") ||
-            !expression.endsWith(")")
+            functionName !== "SUM" &&
+            functionName !== "AVERAGE" &&
+            functionName !== "MIN" &&
+            functionName !== "MAX" &&
+            functionName !== "COUNT"
         ) {
             return null;
         }
 
-        const argumentsExpression =
-            expression.substring(
-                4,
-                expression.length - 1
-            );
-
         const argumentsList =
             this.splitArguments(argumentsExpression);
 
-        let sum = 0;
+        let values = [];
 
         for (const argument of argumentsList) {
 
-            const parts = argument.split(":");
+            const argumentValues =
+                this.getArgumentValues(
+                    argument,
+                    grid
+                );
 
-            if (
-                parts.length === 2 &&
-                AddressUtils.parseAddress(parts[0]) !== null &&
-                AddressUtils.parseAddress(parts[1]) !== null
-            ) {
-                const values =
-                    this.getRangeValues(
-                        parts[0],
-                        parts[1],
-                        grid
-                    );
-
-                if (typeof values === "string") {
-                    return values;
-                }
-
-                for (const value of values) {
-                    const number = Number(value);
-
-                    if (Number.isNaN(number)) {
-                        return "#VALUE!";
-                    }
-
-                    sum += number;
-                }
-            } else {
-                const value =
-                    this.evaluateExpression(
-                        argument,
-                        grid
-                    );
-
-                if (typeof value === "string") {
-                    return value;
-                }
-
-                sum += value;
+            if (typeof argumentValues === "string") {
+                return argumentValues;
             }
 
+            values.push(...argumentValues);
         }
 
-        return sum;
+        if (functionName === "COUNT") {
+
+            let count = 0;
+
+            for (const value of values) {
+
+                const number = Number(value);
+
+                if (
+                    value !== "" &&
+                    !Number.isNaN(number)
+                ) {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        const numbers = [];
+
+        for (const value of values) {
+
+            const number = Number(value);
+
+            if (Number.isNaN(number)) {
+                return "#VALUE!";
+            }
+
+            numbers.push(number);
+        }
+
+        if (functionName === "SUM") {
+
+            let sum = 0;
+
+            for (const number of numbers) {
+                sum += number;
+            }
+
+            return sum;
+        }
+
+        if (functionName === "AVERAGE") {
+
+            if (numbers.length === 0) {
+                return "#DIV/0!";
+            }
+
+            let sum = 0;
+
+            for (const number of numbers) {
+                sum += number;
+            }
+
+            return sum / numbers.length;
+        }
+
+        if (functionName === "MIN") {
+
+            if (numbers.length === 0) {
+                return "#VALUE!";
+            }
+
+            let minimum = numbers[0];
+
+            for (const number of numbers) {
+                if (number < minimum) {
+                    minimum = number;
+                }
+            }
+
+            return minimum;
+        }
+
+        if (functionName === "MAX") {
+
+            if (numbers.length === 0) {
+                return "#VALUE!";
+            }
+
+            let maximum = numbers[0];
+
+            for (const number of numbers) {
+                if (number > maximum) {
+                    maximum = number;
+                }
+            }
+
+            return maximum;
+        }
+
+        return "#ERROR!";
     }
 
     splitArguments(expression) {
@@ -224,6 +294,34 @@ export class FormulaEngine {
         }
 
         return argumentsList;
+    }
+
+    getArgumentValues(argument, grid) {
+
+        const parts = argument.split(":");
+
+        if (
+            parts.length === 2 &&
+            AddressUtils.parseAddress(parts[0]) !== null &&
+            AddressUtils.parseAddress(parts[1]) !== null
+        ) {
+            const values =
+                this.getRangeValues(
+                    parts[0],
+                    parts[1],
+                    grid
+                );
+
+            return values;
+        }
+
+        const value =
+            this.evaluateExpression(
+                argument,
+                grid
+            );
+
+        return [value];
     }
 
     hasMatchingOuterParentheses(expression) {
