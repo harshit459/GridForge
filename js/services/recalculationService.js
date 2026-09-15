@@ -75,6 +75,38 @@ export class RecalculationService {
                 references
             );
 
+            const cycle =
+                this.dependencyGraph.hasCircularDependency(address);
+
+            if (cycle !== null) {
+
+                const affectedAddresses = new Set(cycle);
+
+                for (const cycleAddress of cycle) {
+
+                    const dependents =
+                        this.dependencyGraph.getAllDependents(
+                            cycleAddress
+                        );
+
+                    for (const dependent of dependents) {
+                        affectedAddresses.add(dependent);
+                    }
+                }
+
+                for (const affectedAddress of affectedAddresses) {
+
+                    const affectedCell =
+                        this.getCell(affectedAddress);
+
+                    if (affectedCell !== null) {
+                        affectedCell.value = "#CIRCULAR!";
+                    }
+                }
+
+                return [...affectedAddresses];
+            }
+
             cell.value =
                 this.formulaEngine.evaluate(
                     content,

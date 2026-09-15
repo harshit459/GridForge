@@ -88,4 +88,46 @@ export class DependencyGraph {
         return result;
     }
 
+    hasCircularDependency(cellAddress) {
+
+        const visited = new Set();
+        const path = [];
+
+        const visit = (address) => {
+
+            const pathIndex =
+                path.indexOf(address);
+
+            if (pathIndex !== -1) {
+                return path.slice(pathIndex);
+            }
+
+            if (visited.has(address)) {
+                return null;
+            }
+
+            visited.add(address);
+            path.push(address);
+
+            const dependencies =
+                this.dependencies.get(address) || [];
+
+            for (const dependency of dependencies) {
+
+                const cycle =
+                    visit(dependency);
+
+                if (cycle !== null) {
+                    return cycle;
+                }
+            }
+
+            path.pop();
+
+            return null;
+        };
+
+        return visit(cellAddress);
+    }
+
 }
