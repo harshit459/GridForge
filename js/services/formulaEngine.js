@@ -58,7 +58,7 @@ export class FormulaEngine {
                 ).trim();
         }
 
-        const operators = ["+", "-", "*", "/"];
+        const operators = [">=", "<=", "<>", ">", "<", "=", "+", "-", "*", "/"];
 
         for (const operator of operators) {
 
@@ -80,7 +80,7 @@ export class FormulaEngine {
 
             const right =
                 expression.substring(
-                    operatorIndex + 1
+                    operatorIndex + operator.length
                 ).trim();
 
             if (left === "" || right === "") {
@@ -98,6 +98,22 @@ export class FormulaEngine {
                     right,
                     grid
                 );
+
+            const errors = [
+                "#DIV/0!",
+                "#REF!",
+                "#VALUE!",
+                "#ERROR!",
+                "#CIRCULAR!"
+            ];
+
+            if (errors.includes(firstValue)) {
+                return firstValue;
+            }
+
+            if (errors.includes(secondValue)) {
+                return secondValue;
+            }
 
             if (
                 typeof firstValue === "string" ||
@@ -136,13 +152,43 @@ export class FormulaEngine {
             functionName !== "AVERAGE" &&
             functionName !== "MIN" &&
             functionName !== "MAX" &&
-            functionName !== "COUNT"
+            functionName !== "COUNT" &&
+            functionName !== "IF"
         ) {
             return null;
         }
 
         const argumentsList =
             this.splitArguments(argumentsExpression);
+
+        if (functionName === "IF") {
+
+            if (argumentsList.length !== 3) {
+                return "#ERROR!";
+            }
+
+            const condition =
+                this.evaluateExpression(
+                    argumentsList[0],
+                    grid
+                );
+
+            if (typeof condition === "string") {
+                return condition;
+            }
+
+            if (condition) {
+                return this.evaluateExpression(
+                    argumentsList[1],
+                    grid
+                );
+            }
+
+            return this.evaluateExpression(
+                argumentsList[2],
+                grid
+            );
+        }
 
         let values = [];
 
@@ -183,6 +229,18 @@ export class FormulaEngine {
         const numbers = [];
 
         for (const value of values) {
+
+            const errors = [
+                "#DIV/0!",
+                "#REF!",
+                "#VALUE!",
+                "#ERROR!",
+                "#CIRCULAR!"
+            ];
+
+            if (errors.includes(value)) {
+                return value;
+            }
 
             const number = Number(value);
 
@@ -362,31 +420,54 @@ export class FormulaEngine {
                 depth--;
             }
 
-            if (
-                depth === 0 &&
-                character === operator
-            ) {
-
-                if (
-                    operator === "-" &&
-                    (
-                        i === 0 ||
-                        ["+", "-", "*", "/", "("].includes(
-                            expression[i - 1]
-                        )
-                    )
-                ) {
-                    continue;
-                }
-
-                return i;
+            if (depth !== 0) {
+                continue;
             }
+
+            if (
+                expression.substring(
+                    i,
+                    i + operator.length
+                ) !== operator
+            ) {
+                continue;
+            }
+
+            if (
+                operator === "-" &&
+                (
+                    i === 0 ||
+                    ["+", "-", "*", "/", "("].includes(
+                        expression[i - 1]
+                    )
+                )
+            ) {
+                continue;
+            }
+
+            return i;
         }
 
         return -1;
     }
 
     getOperandValue(operand, grid) {
+        operand = operand.trim();
+
+        if (operand === "TRUE") {
+            return true;
+        }
+
+        if (operand === "FALSE") {
+            return false;
+        }
+
+        if (
+            operand.startsWith('"') &&
+            operand.endsWith('"')
+        ) {
+            return operand.substring(1, operand.length - 1);
+        }
 
         if (/^[A-Z]+[0-9]+$/.test(operand)) {
 
@@ -440,6 +521,30 @@ export class FormulaEngine {
             }
 
             return firstValue / secondValue;
+        }
+
+        if (operator === ">") {
+            return firstValue > secondValue;
+        }
+
+        if (operator === "<") {
+            return firstValue < secondValue;
+        }
+
+        if (operator === ">=") {
+            return firstValue >= secondValue;
+        }
+
+        if (operator === "<=") {
+            return firstValue <= secondValue;
+        }
+
+        if (operator === "=") {
+            return firstValue === secondValue;
+        }
+
+        if (operator === "<>") {
+            return firstValue !== secondValue;
         }
 
         return "#ERROR!";
