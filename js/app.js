@@ -3,8 +3,15 @@ import { SpreadsheetView } from './views/spreadsheetView.js';
 import { SpreadsheetController } from './controllers/spreadsheetController.js';
 import { DependencyGraph } from './services/dependencyGraph.js';
 import { RecalculationService } from './services/recalculationService.js';
+import { Toolbar } from './views/toolbar.js';
 
-const grid = new Grid(50, 26);
+const toolbarElement = document.getElementById("toolbar");
+
+const toolbar = new Toolbar(toolbarElement);
+
+toolbar.render();
+
+const grid = new Grid(50, 10);
 
 const table = document.getElementById('spreadsheet-table');
 const formulaInput = document.getElementById('formula-input');
@@ -17,4 +24,4 @@ const dependencyGraph = new DependencyGraph();
 
 const recalculationService = new RecalculationService(grid, dependencyGraph);
 
-const controller = new SpreadsheetController(grid, view, dependencyGraph, recalculationService);
+const controller = new SpreadsheetController(grid, view, toolbar, dependencyGraph, recalculationService);

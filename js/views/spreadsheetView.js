@@ -76,6 +76,8 @@ export class SpreadsheetView {
 
         cell.textContent = cellData.value;
 
+        this.applyFormatting(cell, cellData);
+
         return cell;
     }
 
@@ -137,4 +139,18 @@ export class SpreadsheetView {
             this.formulaInput.value.length
         );
     }
+
+    applyFormatting(cell, cellData) {
+        cell.style.fontWeight =
+            cellData.format.bold ? "bold" : "normal";
+
+        cell.style.fontStyle =
+            cellData.format.italic ? "italic" : "normal";
+
+        cell.style.fontSize =
+            cellData.format.fontSize + "px";
+
+        cell.style.textAlign =
+            cellData.format.textAlign;
+    }  
 }

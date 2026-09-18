@@ -5,5 +5,12 @@ export class Cell {
 
         this.value = "";
         this.formula = "";
+
+        this.format = {
+            bold: false,
+            italic: false,
+            fontSize: 14,
+            textAlign: "left"
+        };
     }
-} 
+}

@@ -1,8 +1,9 @@
 export class SpreadsheetController {
 
-    constructor(grid, view, dependencyGraph, recalculationService) {
+    constructor(grid, view, toolbar, dependencyGraph, recalculationService) {
         this.grid = grid;
         this.view = view;
+        this.toolbar = toolbar;
         this.dependencyGraph = dependencyGraph;
         this.recalculationService = recalculationService;
 
@@ -164,6 +165,39 @@ export class SpreadsheetController {
             }
             this.startEditing(this.view.formulaInput.value, "formula");
         });
+
+        this.toolbar.boldButton.addEventListener(
+            "click",
+            () => {
+                this.toggleBold();
+            }
+        );
+
+        this.toolbar.italicButton.addEventListener(
+            "click",
+            () => {
+                this.toggleItalic();
+            }
+        );
+
+        this.toolbar.fontSizeSelect.addEventListener(
+            "change",
+            () => {
+                this.setFontSize(
+                    this.toolbar.fontSizeSelect.value
+                );
+            }
+        );
+
+        this.toolbar.alignmentSelect.addEventListener(
+            "change",
+            () => {
+                this.setTextAlign(
+                    this.toolbar.alignmentSelect.value
+                );
+            }
+        );
+
     }
 
     selectCell(cell) {
@@ -178,6 +212,23 @@ export class SpreadsheetController {
         const cellData = this.grid.getCell(row, column);
 
         this.view.setFormulaInput(cellData.value);
+
+        this.toolbar.boldButton.classList.toggle(
+            "active",
+            cellData.format.bold
+        );
+
+        this.toolbar.italicButton.classList.toggle(
+            "active",
+            cellData.format.italic
+        );
+
+        this.toolbar.fontSizeSelect.value =
+            cellData.format.fontSize;
+
+        this.toolbar.alignmentSelect.value =
+            cellData.format.textAlign;
+
     }
 
     startEditing(initialValue, source) {
@@ -292,4 +343,81 @@ export class SpreadsheetController {
         this.editingSource = null;
         this.originalValue = "";
     }
+
+    toggleBold() {
+
+        if (this.selectedCell === null) return;
+
+        const row = Number(this.selectedCell.dataset.row);
+        const column = Number(this.selectedCell.dataset.column);
+
+        const cellData = this.grid.getCell(row, column);
+
+        cellData.format.bold = !cellData.format.bold;
+
+        this.toolbar.boldButton.classList.toggle(
+            "active",
+            cellData.format.bold
+        );
+
+        this.view.applyFormatting(
+            this.selectedCell,
+            cellData
+        );
+    }
+
+    toggleItalic() {
+
+        if (this.selectedCell === null) return;
+
+        const row = Number(this.selectedCell.dataset.row);
+        const column = Number(this.selectedCell.dataset.column);
+
+        const cellData = this.grid.getCell(row, column);
+
+        cellData.format.italic = !cellData.format.italic;
+
+        this.toolbar.italicButton.classList.toggle(
+            "active",
+            cellData.format.italic
+        );
+
+        this.view.applyFormatting(
+            this.selectedCell,
+            cellData
+        );
+    }
+
+    setFontSize(size) {
+        if (this.selectedCell === null) return;
+
+        const row = Number(this.selectedCell.dataset.row);
+        const column = Number(this.selectedCell.dataset.column);
+
+        const cellData = this.grid.getCell(row, column);
+
+        cellData.format.fontSize = Number(size);
+
+        this.view.applyFormatting(
+            this.selectedCell,
+            cellData
+        );
+    }
+
+    setTextAlign(alignment) {
+        if (this.selectedCell === null) return;
+
+        const row = Number(this.selectedCell.dataset.row);
+        const column = Number(this.selectedCell.dataset.column);
+
+        const cellData = this.grid.getCell(row, column);
+
+        cellData.format.textAlign = alignment;
+
+        this.view.applyFormatting(
+            this.selectedCell,
+            cellData
+        );
+    }
+
 } 
