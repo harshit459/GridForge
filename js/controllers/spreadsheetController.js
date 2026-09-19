@@ -8,6 +8,8 @@ export class SpreadsheetController {
         this.recalculationService = recalculationService;
 
         this.selectedCell = null;
+        this.selectedCells = [];
+        this.selectionStart = null;
 
         this.isEditing = false;
         this.editor = null;
@@ -29,6 +31,11 @@ export class SpreadsheetController {
 
             if (this.isEditing && cell !== this.selectedCell) {
                 this.finishEditing();
+            }
+
+            if (event.shiftKey && this.selectionStart !== null) {
+                this.selectRange(this.selectionStart, cell);
+                return;
             }
 
             this.selectCell(cell);
@@ -203,6 +210,8 @@ export class SpreadsheetController {
     selectCell(cell) {
 
         this.selectedCell = cell;
+        this.selectedCells = [cell];
+        this.selectionStart = cell;
 
         this.view.selectCell(cell);
 
@@ -213,21 +222,45 @@ export class SpreadsheetController {
 
         this.view.setFormulaInput(cellData.value);
 
-        this.toolbar.boldButton.classList.toggle(
-            "active",
-            cellData.format.bold
-        );
+        this.updateToolbarState();
 
-        this.toolbar.italicButton.classList.toggle(
-            "active",
-            cellData.format.italic
-        );
+    }
 
-        this.toolbar.fontSizeSelect.value =
-            cellData.format.fontSize;
+    selectRange(startCell, endCell) {
+        const startRow = Number(startCell.dataset.row);
+        const startColumn = Number(startCell.dataset.column);
 
-        this.toolbar.alignmentSelect.value =
-            cellData.format.textAlign;
+        const endRow = Number(endCell.dataset.row);
+        const endColumn = Number(endCell.dataset.column);
+
+        const minRow = Math.min(startRow, endRow);
+        const maxRow = Math.max(startRow, endRow);
+
+        const minColumn = Math.min(startColumn, endColumn);
+        const maxColumn = Math.max(startColumn, endColumn);
+
+        const cells = [];
+
+        for (let row = minRow; row <= maxRow; row++) {
+            for (
+                let column = minColumn;
+                column <= maxColumn;
+                column++
+            ) {
+                const cell =
+                    this.view.getCellElement(row, column);
+
+                if (cell === null) continue;
+
+                cells.push(cell);
+            }
+        }
+
+        this.selectedCells = cells;
+
+        this.view.selectCells(cells);
+
+        this.updateToolbarState();
 
     }
 
@@ -345,79 +378,200 @@ export class SpreadsheetController {
     }
 
     toggleBold() {
+        if (this.selectedCells.length === 0) return;
 
-        if (this.selectedCell === null) return;
+        const allBold =
+            this.selectedCells.every(cell => {
+                const row = Number(cell.dataset.row);
+                const column = Number(cell.dataset.column);
 
-        const row = Number(this.selectedCell.dataset.row);
-        const column = Number(this.selectedCell.dataset.column);
+                const cellData =
+                    this.grid.getCell(row, column);
 
-        const cellData = this.grid.getCell(row, column);
+                return cellData.format.bold;
+            });
 
-        cellData.format.bold = !cellData.format.bold;
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            cellData.format.bold = !allBold;
+
+            this.view.applyFormatting(
+                cell,
+                cellData
+            );
+        }
 
         this.toolbar.boldButton.classList.toggle(
             "active",
-            cellData.format.bold
-        );
-
-        this.view.applyFormatting(
-            this.selectedCell,
-            cellData
+            !allBold
         );
     }
 
     toggleItalic() {
+        if (this.selectedCells.length === 0) return;
 
-        if (this.selectedCell === null) return;
+        const allItalic =
+            this.selectedCells.every(cell => {
+                const row = Number(cell.dataset.row);
+                const column = Number(cell.dataset.column);
 
-        const row = Number(this.selectedCell.dataset.row);
-        const column = Number(this.selectedCell.dataset.column);
+                const cellData =
+                    this.grid.getCell(row, column);
 
-        const cellData = this.grid.getCell(row, column);
+                return cellData.format.italic;
+            });
 
-        cellData.format.italic = !cellData.format.italic;
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            cellData.format.italic = !allItalic;
+
+            this.view.applyFormatting(
+                cell,
+                cellData
+            );
+        }
 
         this.toolbar.italicButton.classList.toggle(
             "active",
-            cellData.format.italic
-        );
-
-        this.view.applyFormatting(
-            this.selectedCell,
-            cellData
+            !allItalic
         );
     }
 
     setFontSize(size) {
-        if (this.selectedCell === null) return;
+        if (this.selectedCells.length === 0) return;
 
-        const row = Number(this.selectedCell.dataset.row);
-        const column = Number(this.selectedCell.dataset.column);
+        const fontSize = Number(size);
 
-        const cellData = this.grid.getCell(row, column);
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
 
-        cellData.format.fontSize = Number(size);
+            const cellData =
+                this.grid.getCell(row, column);
 
-        this.view.applyFormatting(
-            this.selectedCell,
-            cellData
-        );
+            cellData.format.fontSize = fontSize;
+
+            this.view.applyFormatting(
+                cell,
+                cellData
+            );
+        }
     }
 
     setTextAlign(alignment) {
-        if (this.selectedCell === null) return;
+        if (this.selectedCells.length === 0) return;
 
-        const row = Number(this.selectedCell.dataset.row);
-        const column = Number(this.selectedCell.dataset.column);
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
 
-        const cellData = this.grid.getCell(row, column);
+            const cellData =
+                this.grid.getCell(row, column);
 
-        cellData.format.textAlign = alignment;
+            cellData.format.textAlign = alignment;
 
-        this.view.applyFormatting(
-            this.selectedCell,
-            cellData
+            this.view.applyFormatting(
+                cell,
+                cellData
+            );
+        }
+    }
+
+    getCommonFormatValue(property) {
+        if (this.selectedCells.length === 0) {
+            return null;
+        }
+
+        const firstCell = this.selectedCells[0];
+
+        const firstRow = Number(firstCell.dataset.row);
+        const firstColumn = Number(firstCell.dataset.column);
+
+        const firstCellData =
+            this.grid.getCell(firstRow, firstColumn);
+
+        const firstValue =
+            firstCellData.format[property];
+
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            if (cellData.format[property] !== firstValue) {
+                return null;
+            }
+        }
+
+        return firstValue;
+    }
+
+    updateToolbarState() {
+        if (this.selectedCells.length === 0) return;
+
+        const allBold =
+            this.selectedCells.every(cell => {
+                const row = Number(cell.dataset.row);
+                const column = Number(cell.dataset.column);
+
+                const cellData =
+                    this.grid.getCell(row, column);
+
+                return cellData.format.bold;
+            });
+
+        const allItalic =
+            this.selectedCells.every(cell => {
+                const row = Number(cell.dataset.row);
+                const column = Number(cell.dataset.column);
+
+                const cellData =
+                    this.grid.getCell(row, column);
+
+                return cellData.format.italic;
+            });
+
+        const commonFontSize =
+            this.getCommonFormatValue("fontSize");
+
+        const commonAlignment =
+            this.getCommonFormatValue("textAlign");
+
+        this.toolbar.boldButton.classList.toggle(
+            "active",
+            allBold
         );
+
+        this.toolbar.italicButton.classList.toggle(
+            "active",
+            allItalic
+        );
+
+        if (commonFontSize === null) {
+            this.toolbar.fontSizeSelect.value = "mixed";
+        } else {
+            this.toolbar.fontSizeSelect.value =
+                commonFontSize;
+        }
+
+        if (commonAlignment === null) {
+            this.toolbar.alignmentSelect.value = "mixed";
+        } else {
+            this.toolbar.alignmentSelect.value =
+                commonAlignment;
+        }
     }
 
 } 

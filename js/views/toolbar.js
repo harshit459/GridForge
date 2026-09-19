@@ -29,6 +29,14 @@ export class Toolbar {
         // font size select
         const fontSizeSelect = document.createElement("select");
 
+        const mixedOption = document.createElement("option");
+
+        mixedOption.value = "mixed";
+        mixedOption.textContent = "Mixed";
+        mixedOption.disabled = true;
+
+        fontSizeSelect.appendChild(mixedOption);
+
         const sizes = [10, 12, 14, 16, 18, 20, 24];
 
         for (const size of sizes) {
@@ -48,6 +56,15 @@ export class Toolbar {
 
         // alignment select
         const alignmentSelect = document.createElement("select");
+
+        const mixedAlignmentOption =
+            document.createElement("option");
+
+        mixedAlignmentOption.value = "mixed";
+        mixedAlignmentOption.textContent = "Mixed";
+        mixedAlignmentOption.disabled = true;
+
+        alignmentSelect.appendChild(mixedAlignmentOption);
 
         const alignments = [
             ["left", "Left"],

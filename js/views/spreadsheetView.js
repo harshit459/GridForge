@@ -90,14 +90,28 @@ export class SpreadsheetView {
 
     selectCell(cell) {
 
-        const previousCell =
-            this.table.querySelector(".selected-cell");
+        const previousCells =
+            this.table.querySelectorAll(".selected-cell");
 
-        if (previousCell !== null) {
+        for (const previousCell of previousCells) {
             previousCell.classList.remove("selected-cell");
         }
 
         cell.classList.add("selected-cell");
+
+    }
+
+    selectCells(cells) {
+        const previousCells =
+            this.table.querySelectorAll(".selected-cell");
+
+        for (const previousCell of previousCells) {
+            previousCell.classList.remove("selected-cell");
+        }
+
+        for (const cell of cells) {
+            cell.classList.add("selected-cell");
+        }
     }
 
     updateCellDisplay(cellData) {
@@ -152,5 +166,5 @@ export class SpreadsheetView {
 
         cell.style.textAlign =
             cellData.format.textAlign;
-    }  
+    }
 }
