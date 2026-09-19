@@ -11,6 +11,8 @@ export class SpreadsheetController {
         this.selectedCells = [];
         this.selectionStart = null;
 
+        this.clipboard = null;
+
         this.isEditing = false;
         this.editor = null;
         this.originalValue = "";
@@ -63,6 +65,18 @@ export class SpreadsheetController {
         document.addEventListener('keydown', (event) => {
 
             if (this.selectedCell === null) {
+                return;
+            }
+
+            if (event.ctrlKey && event.key.toLowerCase() === "c") {
+                event.preventDefault();
+                this.copySelection();
+                return;
+            }
+
+            if (event.ctrlKey && event.key.toLowerCase() === "v") {
+                event.preventDefault();
+                this.pasteSelection();
                 return;
             }
 
@@ -571,6 +585,141 @@ export class SpreadsheetController {
         } else {
             this.toolbar.alignmentSelect.value =
                 commonAlignment;
+        }
+    }
+
+    copySelection() {
+        if (this.selectedCells.length === 0) return;
+
+        const copiedCells = [];
+
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            copiedCells.push({
+                row: row,
+                column: column,
+                value: cellData.value,
+                formula: cellData.formula,
+                format: {
+                    ...cellData.format
+                }
+            });
+        }
+
+        this.clipboard = {
+            cells: copiedCells
+        };
+
+    }
+
+    pasteSelection() {
+        if (
+            this.clipboard === null ||
+            this.selectedCell === null
+        ) {
+            return;
+        }
+
+        const destinationRow =
+            Number(this.selectedCell.dataset.row);
+
+        const destinationColumn =
+            Number(this.selectedCell.dataset.column);
+
+        const sourceCells =
+            this.clipboard.cells;
+
+        const firstSourceCell =
+            sourceCells[0];
+
+        const rowOffset =
+            destinationRow - firstSourceCell.row;
+
+        const columnOffset =
+            destinationColumn - firstSourceCell.column;
+
+        for (const sourceCell of sourceCells) {
+
+            const targetRow =
+                sourceCell.row + rowOffset;
+
+            const targetColumn =
+                sourceCell.column + columnOffset;
+
+            const targetCell =
+                this.grid.getCell(
+                    targetRow,
+                    targetColumn
+                );
+
+            if (targetCell === null) {
+                continue;
+            }
+
+            const targetElement =
+                this.view.getCellElement(
+                    targetRow,
+                    targetColumn
+                );
+
+            if (sourceCell.formula !== "") {
+
+                const shiftedFormula =
+                    this.recalculationService.formulaEngine
+                        .shiftReferences(
+                            sourceCell.formula,
+                            rowOffset,
+                            columnOffset
+                        );
+
+                targetCell.formula = shiftedFormula;
+
+                targetCell.value =
+                    this.recalculationService.formulaEngine.evaluate(
+                        shiftedFormula,
+                        this.grid
+                    );
+
+                const references =
+                    this.recalculationService.formulaEngine
+                        .getReferences(shiftedFormula);
+
+                this.dependencyGraph.setDependencies(
+                    targetElement.dataset.address,
+                    references
+                );
+
+            } else {
+
+                targetCell.formula = "";
+                targetCell.value = sourceCell.value;
+
+                // NEW: remove old dependencies
+                this.dependencyGraph.setDependencies(
+                    targetElement.dataset.address,
+                    []
+                );
+            }
+
+            targetCell.format = {
+                ...sourceCell.format
+            };
+
+            if (targetElement !== null) {
+                this.view.applyFormatting(
+                    targetElement,
+                    targetCell
+                );
+
+                this.view.updateCellDisplay(
+                    targetCell
+                );
+            }
         }
     }
 

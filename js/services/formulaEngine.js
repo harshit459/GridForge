@@ -646,4 +646,40 @@ export class FormulaEngine {
         return values;
     }
 
+    shiftReferences(formula, rowOffset, columnOffset) {
+        if (!formula.startsWith("=")) {
+            return formula;
+        }
+
+        return formula.replace(
+            /[A-Z]+[0-9]+/g,
+            (reference) => {
+                const position =
+                    AddressUtils.parseAddress(reference);
+
+                if (position === null) {
+                    return reference;
+                }
+
+                const newRow =
+                    position.row + rowOffset;
+
+                const newColumn =
+                    position.column + columnOffset;
+
+                if (
+                    newRow < 0 ||
+                    newColumn < 0
+                ) {
+                    return "#REF!";
+                }
+
+                return (
+                    AddressUtils.columnToName(newColumn) +
+                    (newRow + 1)
+                );
+            }
+        );
+    }
+
 }
