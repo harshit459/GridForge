@@ -1,11 +1,12 @@
 export class SpreadsheetController {
 
-    constructor(grid, view, toolbar, dependencyGraph, recalculationService) {
+    constructor(grid, view, toolbar, dependencyGraph, recalculationService, historyManager) {
         this.grid = grid;
         this.view = view;
         this.toolbar = toolbar;
         this.dependencyGraph = dependencyGraph;
         this.recalculationService = recalculationService;
+        this.historyManager = historyManager;
 
         this.selectedCell = null;
         this.selectedCells = [];
@@ -77,6 +78,22 @@ export class SpreadsheetController {
             if (event.ctrlKey && event.key.toLowerCase() === "v") {
                 event.preventDefault();
                 this.pasteSelection();
+                return;
+            }
+
+            if (event.ctrlKey && event.key.toLowerCase() === "z") {
+                event.preventDefault();
+
+                this.historyManager.undo();
+
+                return;
+            }
+
+            if (event.ctrlKey && event.key.toLowerCase() === "y") {
+                event.preventDefault();
+
+                this.historyManager.redo();
+
                 return;
             }
 
@@ -327,6 +344,9 @@ export class SpreadsheetController {
 
         const cellData = this.grid.getCell(row, column);
 
+        const oldValue = cellData.value;
+        const oldFormula = cellData.formula;
+
         let newValue;
 
         if (this.editingSource === "cell") {
@@ -344,6 +364,77 @@ export class SpreadsheetController {
                 address,
                 newValue
             );
+
+        const newFormula = cellData.formula;
+        const updatedValue = cellData.value;
+
+        const action = {
+            undo: () => {
+                const content =
+                    oldFormula !== ""
+                        ? oldFormula
+                        : oldValue;
+
+                const affectedCells =
+                    this.recalculationService.setCellContent(
+                        address,
+                        content
+                    );
+
+                this.view.updateCellDisplay(cellData);
+
+                for (const affectedAddress of affectedCells) {
+                    const affectedCell =
+                        this.recalculationService.getCell(
+                            affectedAddress
+                        );
+
+                    if (affectedCell === null) {
+                        continue;
+                    }
+
+                    this.view.updateCellDisplay(affectedCell);
+                }
+
+                this.view.setFormulaInput(
+                    oldFormula || oldValue
+                );
+            },
+
+            redo: () => {
+                const content =
+                    newFormula !== ""
+                        ? newFormula
+                        : updatedValue;
+
+                const affectedCells =
+                    this.recalculationService.setCellContent(
+                        address,
+                        content
+                    );
+
+                this.view.updateCellDisplay(cellData);
+
+                for (const affectedAddress of affectedCells) {
+                    const affectedCell =
+                        this.recalculationService.getCell(
+                            affectedAddress
+                        );
+
+                    if (affectedCell === null) {
+                        continue;
+                    }
+
+                    this.view.updateCellDisplay(affectedCell);
+                }
+
+                this.view.setFormulaInput(
+                    newFormula || updatedValue
+                );
+            }
+        };
+
+        this.historyManager.record(action);
 
         this.view.updateCellDisplay(cellData);
 
@@ -405,6 +496,21 @@ export class SpreadsheetController {
                 return cellData.format.bold;
             });
 
+        const previousFormatting = [];
+
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            previousFormatting.push({
+                cell: cell,
+                value: cellData.format.bold
+            });
+        }
+
         for (const cell of this.selectedCells) {
             const row = Number(cell.dataset.row);
             const column = Number(cell.dataset.column);
@@ -419,6 +525,27 @@ export class SpreadsheetController {
                 cellData
             );
         }
+
+        const newFormatting = [];
+
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            newFormatting.push({
+                cell: cell,
+                value: cellData.format.bold
+            });
+        }
+
+        this.recordFormattingAction(
+            "bold",
+            previousFormatting,
+            newFormatting
+        );
 
         this.toolbar.boldButton.classList.toggle(
             "active",
@@ -440,6 +567,21 @@ export class SpreadsheetController {
                 return cellData.format.italic;
             });
 
+        const previousFormatting = [];
+
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            previousFormatting.push({
+                cell: cell,
+                value: cellData.format.italic
+            });
+        }
+
         for (const cell of this.selectedCells) {
             const row = Number(cell.dataset.row);
             const column = Number(cell.dataset.column);
@@ -455,6 +597,27 @@ export class SpreadsheetController {
             );
         }
 
+        const newFormatting = [];
+
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            newFormatting.push({
+                cell: cell,
+                value: cellData.format.italic
+            });
+        }
+
+        this.recordFormattingAction(
+            "italic",
+            previousFormatting,
+            newFormatting
+        );
+
         this.toolbar.italicButton.classList.toggle(
             "active",
             !allItalic
@@ -465,6 +628,21 @@ export class SpreadsheetController {
         if (this.selectedCells.length === 0) return;
 
         const fontSize = Number(size);
+
+        const previousFormatting = [];
+
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            previousFormatting.push({
+                cell: cell,
+                value: cellData.format.fontSize
+            });
+        }
 
         for (const cell of this.selectedCells) {
             const row = Number(cell.dataset.row);
@@ -480,10 +658,47 @@ export class SpreadsheetController {
                 cellData
             );
         }
+
+        const newFormatting = [];
+
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            newFormatting.push({
+                cell: cell,
+                value: cellData.format.fontSize
+            });
+        }
+
+        this.recordFormattingAction(
+            "fontSize",
+            previousFormatting,
+            newFormatting
+        );
+
     }
 
     setTextAlign(alignment) {
         if (this.selectedCells.length === 0) return;
+
+        const previousFormatting = [];
+
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            previousFormatting.push({
+                cell: cell,
+                value: cellData.format.textAlign
+            });
+        }
 
         for (const cell of this.selectedCells) {
             const row = Number(cell.dataset.row);
@@ -499,6 +714,28 @@ export class SpreadsheetController {
                 cellData
             );
         }
+
+        const newFormatting = [];
+
+        for (const cell of this.selectedCells) {
+            const row = Number(cell.dataset.row);
+            const column = Number(cell.dataset.column);
+
+            const cellData =
+                this.grid.getCell(row, column);
+
+            newFormatting.push({
+                cell: cell,
+                value: cellData.format.textAlign
+            });
+        }
+
+        this.recordFormattingAction(
+            "textAlign",
+            previousFormatting,
+            newFormatting
+        );
+
     }
 
     getCommonFormatValue(property) {
@@ -588,6 +825,50 @@ export class SpreadsheetController {
         }
     }
 
+    recordFormattingAction(property, previousFormatting, newFormatting) {
+        const action = {
+            undo: () => {
+                for (const item of previousFormatting) {
+                    const row = Number(item.cell.dataset.row);
+                    const column = Number(item.cell.dataset.column);
+
+                    const cellData =
+                        this.grid.getCell(row, column);
+
+                    cellData.format[property] = item.value;
+
+                    this.view.applyFormatting(
+                        item.cell,
+                        cellData
+                    );
+                }
+
+                this.updateToolbarState();
+            },
+
+            redo: () => {
+                for (const item of newFormatting) {
+                    const row = Number(item.cell.dataset.row);
+                    const column = Number(item.cell.dataset.column);
+
+                    const cellData =
+                        this.grid.getCell(row, column);
+
+                    cellData.format[property] = item.value;
+
+                    this.view.applyFormatting(
+                        item.cell,
+                        cellData
+                    );
+                }
+
+                this.updateToolbarState();
+            }
+        };
+
+        this.historyManager.record(action);
+    }
+
     copySelection() {
         if (this.selectedCells.length === 0) return;
 
@@ -634,6 +915,8 @@ export class SpreadsheetController {
         const sourceCells =
             this.clipboard.cells;
 
+        const previousStates = [];
+
         const firstSourceCell =
             sourceCells[0];
 
@@ -660,6 +943,15 @@ export class SpreadsheetController {
             if (targetCell === null) {
                 continue;
             }
+
+            previousStates.push({
+                cell: targetCell,
+                value: targetCell.value,
+                formula: targetCell.formula,
+                format: {
+                    ...targetCell.format
+                }
+            });
 
             const targetElement =
                 this.view.getCellElement(
@@ -720,6 +1012,103 @@ export class SpreadsheetController {
                     targetCell
                 );
             }
+        }
+
+        const newStates = [];
+
+        for (const sourceCell of sourceCells) {
+
+            const targetRow =
+                sourceCell.row + rowOffset;
+
+            const targetColumn =
+                sourceCell.column + columnOffset;
+
+            const targetCell =
+                this.grid.getCell(
+                    targetRow,
+                    targetColumn
+                );
+
+            if (targetCell === null) {
+                continue;
+            }
+
+            newStates.push({
+                cell: targetCell,
+                value: targetCell.value,
+                formula: targetCell.formula,
+                format: {
+                    ...targetCell.format
+                }
+            });
+        }
+
+        const action = {
+            undo: () => {
+                for (const state of previousStates) {
+                    this.restoreCellState(state);
+                }
+            },
+
+            redo: () => {
+                for (const state of newStates) {
+                    this.restoreCellState(state);
+                }
+            }
+        };
+
+        this.historyManager.record(action);
+    }
+
+    restoreCellState(state) {
+        const content =
+            state.formula !== ""
+                ? state.formula
+                : state.value;
+
+        const targetElement =
+            this.view.getCellElement(
+                state.cell.row,
+                state.cell.column
+            );
+
+        if (targetElement === null) {
+            return;
+        }
+
+        const affectedCells =
+            this.recalculationService.setCellContent(
+                targetElement.dataset.address,
+                content
+            );
+
+        state.cell.format = {
+            ...state.format
+        };
+
+        this.view.applyFormatting(
+            targetElement,
+            state.cell
+        );
+
+        this.view.updateCellDisplay(
+            state.cell
+        );
+
+        for (const affectedAddress of affectedCells) {
+            const affectedCell =
+                this.recalculationService.getCell(
+                    affectedAddress
+                );
+
+            if (affectedCell === null) {
+                continue;
+            }
+
+            this.view.updateCellDisplay(
+                affectedCell
+            );
         }
     }
 

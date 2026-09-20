@@ -4,6 +4,7 @@ import { SpreadsheetController } from './controllers/spreadsheetController.js';
 import { DependencyGraph } from './services/dependencyGraph.js';
 import { RecalculationService } from './services/recalculationService.js';
 import { Toolbar } from './views/toolbar.js';
+import { HistoryManager } from './services/historyManager.js';
 
 const toolbarElement = document.getElementById("toolbar");
 
@@ -24,4 +25,6 @@ const dependencyGraph = new DependencyGraph();
 
 const recalculationService = new RecalculationService(grid, dependencyGraph);
 
-const controller = new SpreadsheetController(grid, view, toolbar, dependencyGraph, recalculationService);
+const historyManager = new HistoryManager();
+
+const controller = new SpreadsheetController(grid, view, toolbar, dependencyGraph, recalculationService, historyManager);
