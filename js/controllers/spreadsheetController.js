@@ -1,12 +1,14 @@
 export class SpreadsheetController {
 
-    constructor(grid, view, toolbar, dependencyGraph, recalculationService, historyManager) {
+    constructor(grid, view, toolbar, dependencyGraph, recalculationService, historyManager, storageService) {
         this.grid = grid;
         this.view = view;
         this.toolbar = toolbar;
         this.dependencyGraph = dependencyGraph;
         this.recalculationService = recalculationService;
+
         this.historyManager = historyManager;
+        this.storageService = storageService;
 
         this.selectedCell = null;
         this.selectedCells = [];
@@ -235,6 +237,24 @@ export class SpreadsheetController {
                 );
             }
         );
+
+        this.toolbar.saveButton.addEventListener("click", () => {
+            this.storageService.save(this.grid);
+        });
+
+        this.toolbar.loadButton.addEventListener("click", () => {
+
+            const loaded =
+                this.storageService.load(this.grid);
+
+            if (!loaded) {
+                return;
+            }
+
+            this.rebuildDependencies();
+
+            this.view.render();
+        });
 
     }
 
@@ -1109,6 +1129,40 @@ export class SpreadsheetController {
             this.view.updateCellDisplay(
                 affectedCell
             );
+        }
+    }
+
+    rebuildDependencies() {
+        for (let row = 0; row < this.grid.rows; row++) {
+            for (let column = 0; column < this.grid.columns; column++) {
+
+                const cell =
+                    this.grid.getCell(row, column);
+
+                const address =
+                    this.view.getCellElement(row, column)
+                        .dataset.address;
+
+                if (cell.formula !== "") {
+
+                    const references =
+                        this.recalculationService
+                            .formulaEngine
+                            .getReferences(cell.formula);
+
+                    this.dependencyGraph.setDependencies(
+                        address,
+                        references
+                    );
+
+                } else {
+
+                    this.dependencyGraph.setDependencies(
+                        address,
+                        []
+                    );
+                }
+            }
         }
     }
 

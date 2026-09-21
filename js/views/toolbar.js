@@ -86,5 +86,30 @@ export class Toolbar {
         this.container.appendChild(alignmentSelect);
 
         this.alignmentSelect = alignmentSelect;
+
+        // save button
+        const saveButton = document.createElement("button");
+
+        saveButton.textContent = "Save";
+        saveButton.type = "button";
+        saveButton.classList.add("toolbar-button");
+
+        this.container.appendChild(saveButton);
+
+        this.saveButton = saveButton;
+
+        // load button
+        const loadButton = document.createElement("button");
+
+        loadButton.textContent = "Load";
+        loadButton.type = "button";
+        loadButton.classList.add("toolbar-button");
+
+        this.container.appendChild(loadButton);
+
+        this.loadButton = loadButton;
+
+        
+
     }
 }
