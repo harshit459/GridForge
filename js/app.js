@@ -13,12 +13,13 @@ const toolbar = new Toolbar(toolbarElement);
 
 toolbar.render();
 
-const grid = new Grid(50, 10);
+const grid = new Grid(50, 50);
 
 const table = document.getElementById('spreadsheet-table');
 const formulaInput = document.getElementById('formula-input');
+const nameBox = document.getElementById('name-box');
 
-const view = new SpreadsheetView(grid, table, formulaInput);
+const view = new SpreadsheetView(grid, table, formulaInput, nameBox);
 
 view.render();
 

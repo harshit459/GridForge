@@ -87,6 +87,12 @@ export class Toolbar {
 
         this.alignmentSelect = alignmentSelect;
 
+        const separator = document.createElement("span");
+
+        separator.classList.add("toolbar-separator");
+
+        this.container.appendChild(separator);
+
         // save button
         const saveButton = document.createElement("button");
 
@@ -109,7 +115,7 @@ export class Toolbar {
 
         this.loadButton = loadButton;
 
-        
+
 
     }
 }

@@ -2,10 +2,11 @@ import { AddressUtils } from "../utils/addressUtils.js";
 
 export class SpreadsheetView {
 
-    constructor(grid, table, formulaInput) {
+    constructor(grid, table, formulaInput, nameBox) {
         this.grid = grid;
         this.table = table;
         this.formulaInput = formulaInput;
+        this.nameBox = nameBox;
     }
 
     render() {
@@ -112,6 +113,10 @@ export class SpreadsheetView {
         for (const cell of cells) {
             cell.classList.add("selected-cell");
         }
+    }
+
+    setNameBox(value) {
+        this.nameBox.value = value;
     }
 
     updateCellDisplay(cellData) {

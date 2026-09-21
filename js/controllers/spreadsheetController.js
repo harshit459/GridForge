@@ -19,6 +19,7 @@ export class SpreadsheetController {
         this.isEditing = false;
         this.editor = null;
         this.originalValue = "";
+        this.originalFormula = "";
         this.editingSource = null;
 
         this.setupEvents();
@@ -128,6 +129,8 @@ export class SpreadsheetController {
 
                 this.selectCell(nextCellElement);
 
+                this.scrollSelectedCellIntoView();
+
                 return;
             }
 
@@ -152,6 +155,18 @@ export class SpreadsheetController {
 
             if (this.isEditing) {
                 return;
+            }
+
+            if (
+                !this.isEditing &&
+                (
+                    event.key === "ArrowUp" ||
+                    event.key === "ArrowDown" ||
+                    event.key === "ArrowLeft" ||
+                    event.key === "ArrowRight"
+                )
+            ) {
+                event.preventDefault();
             }
 
             const row = Number(this.selectedCell.dataset.row);
@@ -196,6 +211,8 @@ export class SpreadsheetController {
                 );
 
             this.selectCell(nextCellElement);
+
+            this.scrollSelectedCellIntoView();
         });
 
         this.view.formulaInput.addEventListener('focus', () => {
@@ -266,6 +283,10 @@ export class SpreadsheetController {
 
         this.view.selectCell(cell);
 
+        this.view.setNameBox(
+            cell.dataset.address
+        );
+
         const row = Number(cell.dataset.row);
         const column = Number(cell.dataset.column);
 
@@ -311,6 +332,22 @@ export class SpreadsheetController {
 
         this.view.selectCells(cells);
 
+        const startAddress =
+            this.view.getCellElement(minRow, minColumn)
+                .dataset.address;
+
+        const endAddress =
+            this.view.getCellElement(maxRow, maxColumn)
+                .dataset.address;
+
+        if (startAddress === endAddress) {
+            this.view.setNameBox(startAddress);
+        } else {
+            this.view.setNameBox(
+                `${startAddress}:${endAddress}`
+            );
+        }
+
         this.updateToolbarState();
 
     }
@@ -330,6 +367,7 @@ export class SpreadsheetController {
         const cellData = this.grid.getCell(row, column);
 
         this.originalValue = cellData.value;
+        this.originalFormula = cellData.formula;
 
         if (source === "cell") {
 
@@ -474,10 +512,7 @@ export class SpreadsheetController {
 
         // this.view.setFormulaInput(newValue);
 
-        this.editor = null;
-        this.isEditing = false;
-        this.editingSource = null;
-        this.originalValue = "";
+        this.stopEditing();
     }
 
     cancelEditing() {
@@ -492,14 +527,23 @@ export class SpreadsheetController {
         const cellData = this.grid.getCell(row, column);
 
         cellData.value = this.originalValue;
+        cellData.formula = this.originalFormula;
 
         this.view.updateCellDisplay(cellData);
-        this.view.setFormulaInput(this.originalValue);
 
+        this.view.setFormulaInput(
+            this.originalFormula || this.originalValue
+        );
+
+        this.stopEditing();
+    }
+
+    stopEditing() {
         this.editor = null;
         this.isEditing = false;
         this.editingSource = null;
         this.originalValue = "";
+        this.originalFormula = "";
     }
 
     toggleBold() {
@@ -1164,6 +1208,17 @@ export class SpreadsheetController {
                 }
             }
         }
+    }
+
+    scrollSelectedCellIntoView() {
+        if (this.selectedCell === null) {
+            return;
+        }
+
+        this.selectedCell.scrollIntoView({
+            block: "nearest",
+            inline: "nearest"
+        });
     }
 
 } 
