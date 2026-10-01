@@ -1,7 +1,8 @@
 export class SpreadsheetController {
 
-    constructor(grid, view, toolbar, dependencyGraph, recalculationService, historyManager, storageService) {
-        this.grid = grid;
+    constructor(spreadsheet, view, toolbar, dependencyGraph, recalculationService, historyManager, storageService) {
+        this.spreadsheet = spreadsheet;
+        this.grid = spreadsheet.grid;
         this.view = view;
         this.toolbar = toolbar;
         this.dependencyGraph = dependencyGraph;
@@ -23,6 +24,7 @@ export class SpreadsheetController {
         this.editingSource = null;
 
         this.setupEvents();
+        this.rebuildDependencies();
     }
 
     setupEvents() {
@@ -256,21 +258,7 @@ export class SpreadsheetController {
         );
 
         this.toolbar.saveButton.addEventListener("click", () => {
-            this.storageService.save(this.grid);
-        });
-
-        this.toolbar.loadButton.addEventListener("click", () => {
-
-            const loaded =
-                this.storageService.load(this.grid);
-
-            if (!loaded) {
-                return;
-            }
-
-            this.rebuildDependencies();
-
-            this.view.render();
+            this.storageService.save(this.spreadsheet);
         });
 
     }
@@ -509,8 +497,6 @@ export class SpreadsheetController {
 
             this.view.updateCellDisplay(affectedCell);
         }
-
-        // this.view.setFormulaInput(newValue);
 
         this.stopEditing();
     }

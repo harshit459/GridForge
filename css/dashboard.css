@@ -1,0 +1,180 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    background: #f5f6f8;
+    color: #1f2937;
+}
+
+
+header {
+    padding: 24px 32px;
+    background: #1f2937;
+    color: white;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 28px;
+    text-align: center;
+}
+
+
+main {
+    padding: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+main h2 {
+    margin: 0 0 24px;
+    font-size: 22px;
+    text-align: center;
+}
+
+
+#new-spreadsheet-button {
+    display: block;
+    margin: 0 auto 28px;
+    padding: 11px 18px;
+    border: none;
+    border-radius: 6px;
+    background: #2563eb;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#new-spreadsheet-button:hover {
+    background: #1d4ed8;
+}
+
+
+#spreadsheet-list {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(240px, 280px));
+
+    justify-content: center;
+
+    gap: 20px;
+}
+
+
+.spreadsheet-card {
+    padding: 20px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 140px;
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.spreadsheet-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.1);
+}
+
+
+.spreadsheet-card h3 {
+    margin: 0 0 20px;
+    font-size: 18px;
+    word-break: break-word;
+}
+
+
+.spreadsheet-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.spreadsheet-actions button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+
+.spreadsheet-actions button:first-child {
+    background: #2563eb;
+    color: white;
+}
+
+
+.spreadsheet-actions button:nth-child(2) {
+    background: #e5e7eb;
+    color: #1f2937;
+}
+
+
+.spreadsheet-actions button:nth-child(3) {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+
+.spreadsheet-actions button:first-child:hover {
+    background: #1d4ed8;
+}
+
+.spreadsheet-actions button:nth-child(2):hover {
+    background: #d1d5db;
+}
+
+.spreadsheet-actions button:nth-child(3):hover {
+    background: #fecaca;
+}
+
+@media (max-width: 600px) {
+
+    header {
+        padding: 20px;
+    }
+
+    header h1 {
+        font-size: 24px;
+    }
+
+    main {
+        padding: 20px;
+    }
+
+    #new-spreadsheet-button {
+        margin: 20px 20px 0;
+    }
+
+    #spreadsheet-list {
+        grid-template-columns: 1fr;
+    }
+
+    .spreadsheet-actions {
+        flex-direction: column;
+    }
+
+    .spreadsheet-actions button {
+        width: 100%;
+    }
+}
+
+.spreadsheet-card p {
+    margin: -12px 0 20px;
+    font-size: 13px;
+    color: #6b7280;
+}

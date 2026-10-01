@@ -104,18 +104,5 @@ export class Toolbar {
 
         this.saveButton = saveButton;
 
-        // load button
-        const loadButton = document.createElement("button");
-
-        loadButton.textContent = "Load";
-        loadButton.type = "button";
-        loadButton.classList.add("toolbar-button");
-
-        this.container.appendChild(loadButton);
-
-        this.loadButton = loadButton;
-
-
-
     }
 }
