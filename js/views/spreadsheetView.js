@@ -146,8 +146,13 @@ export class SpreadsheetView {
         return editor;
     }
 
-    setFormulaInput(value) {
-        this.formulaInput.value = value;
+    setFormulaInput(value, formula) {
+        if(formula === "") {
+            this.formulaInput.value = value;
+        }
+        else{
+            this.formulaInput.value = formula;
+        }
     }
 
     focusFormulaInput() {

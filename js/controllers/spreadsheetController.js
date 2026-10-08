@@ -280,7 +280,7 @@ export class SpreadsheetController {
 
         const cellData = this.grid.getCell(row, column);
 
-        this.view.setFormulaInput(cellData.value);
+        this.view.setFormulaInput(cellData.value, cellData.formula);
 
         this.updateToolbarState();
 
