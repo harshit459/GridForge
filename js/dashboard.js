@@ -113,7 +113,7 @@ newSpreadsheetButton.addEventListener("click", () => {
         crypto.randomUUID(),
         name.trim(),
         50,
-        15
+        26
     );
 
     storageService.save(spreadsheet);

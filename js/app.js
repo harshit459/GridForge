@@ -29,7 +29,7 @@ const spreadsheet =
             crypto.randomUUID(),
             "Untitled Spreadsheet",
             50,
-            10
+            26
         );
 
 const spreadsheetTitle =
