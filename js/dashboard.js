@@ -112,8 +112,8 @@ newSpreadsheetButton.addEventListener("click", () => {
     const spreadsheet = new Spreadsheet(
         crypto.randomUUID(),
         name.trim(),
-        50,
-        26
+        100,
+        100
     );
 
     storageService.save(spreadsheet);

@@ -28,8 +28,8 @@ const spreadsheet =
         : new Spreadsheet(
             crypto.randomUUID(),
             "Untitled Spreadsheet",
-            50,
-            26
+            100,
+            100
         );
 
 const spreadsheetTitle =
